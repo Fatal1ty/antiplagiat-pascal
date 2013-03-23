@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{%block title %}Расширенная проверка файла на плагиат{% end %}
+
+{% block active_advanced_check %} class=active{% end %}
+
+{% block content %}
+	{%if 'step' in globals() and step == 1 %}
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="alert alert-info">
+				Отправляемый файл должен содержать текст с исходным кодом на языке Pascal стандарта ИСО 10206.
+			</div>
+		</div>
+	</div>
+	<div class="row-fluid">
+		<div class="span12">
+			<form class="form-horizontal" action="/advanced_check" method="post" enctype="multipart/form-data">
+				<div class="control-group">
+					<label class="control-label" for="data">Файл</label>
+					<div class="controls">
+						<input type="file" name="data" style="width: 220px">
+					</div>
+				</div>
+				<div class="control-group">
+					<div class="controls">
+						<button type="submit" class="btn btn-primary">Отправить</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	{% end %}
+	{%if 'courses' in globals() and 'collections' in globals() and 'step' in globals() and step == 2 %}
+	<div class="row-fluid">
+		<table style="width: 100%;">
+			<tr>
+				<td style="width: 24%; text-align: center; padding-bottom: 10px;">
+					Выберите курс
+				</td>
+				<td style="width: 1%; text-align: center;"></td>
+				<td style="width: 24%; text-align: center; padding-bottom: 10px;">
+					Выберите тестовый набор
+				</td>
+				<td style="width: 1%; text-align: center;"></td>
+				<td style="width: 24%; text-align: center; padding-bottom: 10px;">
+					Выберите текст
+				</td>
+				<td style="width: 13%; text-align: center;"></td>
+				<td style="width: 13%; text-align: center;"></td>
+			</tr>
+			<tr>
+				<td style="width: 24%; text-align: center; vertical-align: middle;">
+					<select style="margin: 0px;" name="select_course_id" id="select_course_id" onchange="select_course(this[selectedIndex].value)">
+					{% for course in courses.items() %}
+						<option value={{course[0]}}>{{course[1]}}</option>
+					{% end %}
+					</select>
+				</td>
+				<td style="width: 1%; text-align: center; vertical-align: middle;">
+					<i class="icon-arrow-right"></i>
+				</td>
+				<td style="width: 24%; text-align: center; vertical-align: middle;">
+					<select style="margin: 0px;" name="select_collection_id" id="select_collection_id" onchange="select_collection(this[selectedIndex].value)"></select>
+				</td>
+				<td style="width: 1%; text-align: center; vertical-align: middle;">
+					<i class="icon-arrow-right"></i>
+				</td>
+				<td style="width: 24%; text-align: center; vertical-align: middle;">
+					<select style="margin: 0px;" name="select_text_id" id="select_text_id" onchange="select_text(this[selectedIndex].value)"></select>
+				</td>
+				<td style="width: 13%; text-align: center; vertical-align: middle;">
+					<i class="icon-arrow-right"></i>
+				<td style="width: 13%; text-align: center; vertical-align: middle;">
+					<button id="button" class="btn btn-primary" onclick="compare_texts()">Сравнить</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="controls_bottom_hr" class="row-fluid" style="display: none;">
+		<div class="span12">
+			<hr>
+		</div>
+	</div>
+	<div id="results_block" style="display: none;">
+		<div class="row-fluid">
+			<div class="span8 offset2">
+				<div id="results_alert" class="alert" style="margin-bottom: 5px; padding: 8px 0px 8px 8px;">
+					<table style="width: 100%">
+						<tr>
+							<td id="results_alert_caption" style="width: 80%">Идет анализ. Пожалуйста, дождитесь полного результата...</td>
+							<td id="results_loading" style="width: 20%; text-align: center;"><img src="/static/img/loading.gif"></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+		<div class="row-fluid">
+			<div class="span8 offset2">
+				<table class="table table-bordered" id="results_table">
+					<tr>
+						<th style="width: 80%;">Файл</th>
+						<th style="width: 20%;">Сходство</th>
+					</tr>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="row-fluid">
+		<div class="span12">
+			<hr>
+		</div>
+	</div>
+	<a id="code_block_a"></a>
+	<div id="code_block" class="row-fluid">
+		<div id="code_left_block" class="span6" style="display: none";>
+			<div class="row-fluid">
+				<div class="span12">
+					<b>Выбранный для сравнения текст</b>
+				</div>
+			</div>
+			<div class="row-fluid">
+				<div class="span12">
+					<div id="code_left">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="code_right_block" class="span12" style="marginLeft: 0px;">
+			<div class="row-fluid">
+				<div class="span12">
+					<b>Загруженный только что текст</b>
+				</div>
+			</div>
+			<div class="row-fluid">
+				<div class="span12">
+					<div id="code_right">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		function get_texts(collection_id)
+		{
+			if (!(collection_id in texts))
+			{
+				texts[collection_id] = [];
+				var xmlhttp = getXmlHttp();
+				xmlhttp.open("GET", "/texts?collection_id=" + collection_id, false);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+				xmlhttp.send();
+				if (xmlhttp.status == 200)
+				{
+					var result = xmlhttp.responseText;
+					if (result)
+					{
+						var new_texts = result.split(';');
+						for (var i = 0; i < new_texts.length; i++)
+						{
+							var new_text = new_texts[i].split(',');
+							texts[collection_id].push([new_text[0], new_text[1]]);
+						}
+					}
+				}
+			}
+			return texts[collection_id];
+		}
+		function get_text_body(text_id)
+		{
+			if (!(text_id in texts_body))
+			{
+				texts_body[text_id] = "";
+				var xmlhttp = getXmlHttp();
+				xmlhttp.open("GET", "/text?text_id=" + text_id, false);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+				xmlhttp.send();
+				if (xmlhttp.status == 200)
+				{
+					texts_body[text_id] = xmlhttp.responseText;
+				}
+			}
+			return texts_body[text_id];
+		}
+		function change_controls_state(state)
+		{
+			if (state == "hide")
+			{
+				document.getElementById("button").disabled = true;
+				document.getElementById("select_course_id").disabled = true;
+				document.getElementById("select_collection_id").disabled = true;
+			}
+			else if (state == "show")
+			{
+				document.getElementById("button").disabled = false;
+				document.getElementById("select_course_id").disabled = false;
+				document.getElementById("select_collection_id").disabled = false;
+			}
+		}
+		function change_code_left_state(state)
+		{
+			if (state == "hide")
+			{
+				document.getElementById("code_left_block").style.display = "none";
+				document.getElementById("code_right_block").className = "span12";
+				document.getElementById("code_right_block").style.marginLeft = "0px";
+			}
+			else if (state == "show")
+			{
+				document.getElementById("code_left_block").style.display = "";
+				document.getElementById("code_right_block").className = "span6";
+				document.getElementById("code_right_block").style.marginLeft = "";
+			}
+		}
+		function change_result_state(state)
+		{
+			var alert_success_caption = "Анализ успешно пройден. Результат представлен в таблице.";
+			var alert_success_className = "alert alert-success";
+			var alert_wait_caption = "Идет анализ. Пожалуйста, дождитесь полного результата...";
+			var alert_wait_className = "alert";
+			var loading_gif = '<img src="/static/img/loading.gif">'
+			if (state == "success")
+			{
+				document.getElementById("results_alert_caption").innerHTML = alert_success_caption;
+				document.getElementById("results_alert").className = alert_success_className;
+				document.getElementById("results_loading").innerHTML = "";
+			}
+			else if (state == "wait")
+			{
+				document.getElementById("results_alert_caption").innerHTML = alert_wait_caption;
+				document.getElementById("results_alert").className = alert_wait_className;
+				document.getElementById("results_loading").innerHTML = loading_gif;
+			}
+		}
+		function select_course(course_id)
+		{
+			collection_id = document.getElementById("select_collection_id");
+			text_id = document.getElementById("select_text_id");
+			collection_id.length = 0;
+			text_id.length = 0;
+			if (course_id in collections)
+			{
+				var course_collections = collections[course_id];
+				if (course_collections.length > 0)
+				{
+					for (var i = 0; i < course_collections.length; i++)
+					{
+						collection_id[i] = new Option(course_collections[i][1], course_collections[i][0]);
+					}
+					select_collection(course_collections[0][0]);
+				}
+			}
+		}
+		function select_collection(collection_id)
+		{
+			var collection_texts = get_texts(collection_id);
+			var select_text_id = document.getElementById("select_text_id");
+			select_text_id.length = 0;
+			select_text_id[0] = new Option("Все тексты", 0);
+			for (var i = 0; i < collection_texts.length; i++)
+			{
+				select_text_id[i + 1] = new Option(collection_texts[i][1], collection_texts[i][0]);
+			}
+			change_code_left_state("hide");
+		}
+		function select_text(text_id)
+		{
+			if (text_id == "0")
+			{
+				change_code_left_state("hide");
+				return;
+			}
+			change_code_left_state("show");
+			document.getElementById("code_left").innerHTML = get_text_body(text_id);
+			var select_text_id = document.getElementById("select_text_id");
+			for (var i = 0; i < select_text_id.length; i++)
+			{
+				if (select_text_id[i].value == text_id)
+				{
+					select_text_id.selectedIndex = i;
+					break;
+				}
+			}
+		}
+		function clear_results()
+		{
+			var table = document.getElementById("results_table");
+			var rows_count = table.rows.length;
+			for (var i = 1; i < rows_count; i++)
+			{
+				table.deleteRow(1);
+			}
+		}
+		function add_result(result, text_name, text_id)
+		{
+			var table = document.getElementById("results_table");
+			var className;
+			if (result > "0.85")
+				className = "error";
+			else if (result > "0.75")
+				className = "warning";
+			else if (result > "0.15")
+				className = "info";
+			else if (result <= "0.15")
+				className = "success";
+			for (var i = 1; i < table.rows.length; i++)
+			{
+				if (table.rows[i].cells[1].innerHTML < result)
+				{
+					var row = table.insertRow(i);
+					if (text_id == "0")
+						row.insertCell(0).innerHTML = text_name;
+					else
+						row.insertCell(0).innerHTML = '<a href="#code_block_a" onclick="select_text(\'' + text_id + '\');">' + text_name + '</a>';
+					row.insertCell(1).innerHTML = result;
+					row.className = className;
+					return;
+				}
+			}
+			row = table.insertRow(table.rows.length);
+			if (text_id == "0")
+				row.insertCell(0).innerHTML = text_name;
+			else
+				row.insertCell(0).innerHTML = '<a href="#code_block_a" onclick="select_text(\'' + text_id + '\');">' + text_name + '</a>';
+			row.insertCell(1).innerHTML = result;
+			row.className = className;
+		}
+		function get_result(result_id)
+		{
+			if (document.getElementById("select_text_id").length == 1)
+			{
+				add_result(0, "<b>Тексты отсутствуют</b>", "0");
+				change_result_state("success");
+				change_controls_state("show");
+				return;
+			}
+			var xmlhttp = getXmlHttp();
+			var results_count = 0;
+			function foo()
+			{
+				xmlhttp.open("GET", "/result?result_id=" + result_id, false);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+				xmlhttp.send();
+				if (xmlhttp.status == 200)
+				{
+					var res = xmlhttp.responseText;
+					if (res)
+					{
+						if (res.indexOf(';') == 1)
+						{
+							if (res.length > 2)
+							{
+								var tmp = res.substr(2).split(';');
+								if (tmp.length > results_count)
+								{
+									for (var i = results_count; i < tmp.length; i++)
+									{
+										var t = tmp[i].split(':');
+										var text_id = t[0];
+										var text_name = "";
+										var collection_id = document.getElementById("select_collection_id");
+										collection_id = collection_id[collection_id.selectedIndex].value;
+										var collection_texts = texts[collection_id];
+										for (var j = 0; j < collection_texts.length; i++)
+										{
+											if (collection_texts[i][0] == text_id)
+											{
+												text_name = collection_texts[i][1];
+												break;
+											}
+										}
+										var result = t[1];
+										add_result(result, text_name, text_id);
+									}
+									results_count = tmp.length;
+								}
+								if (res[0] == '1')
+								{
+									change_result_state("success");
+									change_controls_state("show");
+									return;
+								}
+							}
+							else
+							{
+								if (res[0] == '1')
+								{
+									add_result(0, "<b>Тексты отсутствуют</b>", "0");
+									change_result_state("success");
+									change_controls_state("show");
+									return;
+								}
+							}
+						}
+						else if (res != "-1")
+						{
+							add_result(res, selected_text_name, existing_text_id, "0");
+							change_result_state("success");
+							change_controls_state("show");
+							return;
+						}
+						else
+						{
+							alert('Уходи!');
+							change_controls_state("show");
+							return;
+						}
+					}
+				}
+				setTimeout(foo, 1000);
+			}
+			foo();
+		}
+		function compare_texts()
+		{
+			document.getElementById("results_block").style.display = "";
+			document.getElementById("controls_bottom_hr").style.display = "";
+			change_result_state("wait");
+			var select_text_id = document.getElementById("select_text_id");
+			clear_results();
+			if (select_text_id.length == 0)
+			{
+				add_result(0, "<b>Тексты отсутствуют</b>", "0");
+				change_result_state("success");
+				change_controls_state("show");
+				return;
+			}
+			var existing_text_name = select_text_id[select_text_id.selectedIndex].text;
+			existing_text_id = select_text_id[select_text_id.selectedIndex].value;
+			var xmlhttp = getXmlHttp();
+			if (existing_text_id == "0")
+			{
+				var collection_id = document.getElementById("select_collection_id")
+				collection_id = collection_id[collection_id.selectedIndex].value;
+				xmlhttp.open("GET", "/compare?temporary_text_id=" + temporary_text_id + "&collection_id=" + collection_id);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			}
+			else
+			{
+				xmlhttp.open("GET", "/compare?temporary_text_id=" + temporary_text_id + "&existing_text_id=" + existing_text_id);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+				selected_text_name = existing_text_name;
+			}
+			xmlhttp.onreadystatechange = function()
+			{
+				if (xmlhttp.readyState == 4)
+				{
+					if (xmlhttp.status == 200)
+					{
+						var result_id = xmlhttp.responseText;
+						get_result(result_id);
+					}
+				}
+			}
+			change_controls_state("hide");
+			xmlhttp.send();
+		}
+		function get_temporary_text_id()
+		{
+			var url = document.location.href;
+			var params_pos = url.indexOf('?');
+			var temporary_text_id = "";
+			if (params_pos != -1)
+			{
+				var params = url.substr(params_pos + 1).split("&");
+				if (params != "")
+				{
+					for (var i = 0; i < params.length; i++)
+					{
+						var param = params[i].split("=");
+						if (param.length == 2 && param[0] == "text_id")
+						{
+							return param[1].split("#")[0];
+						}
+					}
+				}
+			}
+			return temporary_text_id;
+		}
+		// следующий код вызывается при открытии страницы
+		var collections = {{str(collections)}}
+		var texts = {};
+		var texts_body = {};
+		{% if courses %}
+		course_id = document.getElementById("select_course_id");
+		select_course(course_id[course_id.selectedIndex].value);
+		{% end %}
+		var selected_text_name = ""
+		var existing_text_id = "";
+		var temporary_text_id = get_temporary_text_id();
+		if (temporary_text_id != "")
+		{
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("GET", "/temporary_text?text_id=" + temporary_text_id);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.onreadystatechange = function()
+			{
+				if (xmlhttp.readyState == 4)
+				{
+					if (xmlhttp.status == 200)
+					{
+						var text = xmlhttp.responseText;
+						document.getElementById("code_right").innerHTML= text;
+					}
+				}
+			}
+			xmlhttp.send();
+		}
+		// end
+	</script>
+	{% end %}
+	{% if 'parse_error' in globals() %}
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="alert alert-error">
+				{{parse_error}}
+			</div>
+		</div>
+	</div>
+	{% end %}
+	{% if 'error_missed_file' in globals() %}
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="alert alert-error">
+				Вы забыли выбрать файл!
+			</div>
+		</div>
+	</div>
+	{% end %}
+	{%if 'error_large_file' in globals() %}
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="alert alert-error">
+				Загружаемый файл превышает допустимый размер!
+			</div>
+		</div>
+	</div>
+	{% end %}
+{% end %}

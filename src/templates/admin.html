@@ -1,0 +1,846 @@
+{% extends "base.html" %}
+
+{%block title %}Администрирование{% end %}
+
+{% block active_admin %} class=active{% end %}
+
+{% block content %}
+	<div class="row-fluid">
+		<div class="span12">
+			<ul class="nav nav-tabs">
+				{% if is_admin %}
+					<li class="active"><a href="#tab1" data-toggle="tab">Добавление преподавателей</a></li>
+					<li><a href="#tab2" data-toggle="tab">Удаление преподавателей</a></li>
+					<li><a href="#tab3" data-toggle="tab">Удаление старых проверявшихся текстов</a></li>
+					<li><a href="#tab4" data-toggle="tab">Удаление старых результатов проверок</a></li>
+				{% else %}
+					<li><a href="#tab1" data-toggle="tab">Добавление курсов</a></li>
+					<li><a href="#tab2" data-toggle="tab">Удаление курсов</a></li>
+					<li><a href="#tab3" data-toggle="tab">Добавление тестовых наборов</a></li>
+					<li><a href="#tab4" data-toggle="tab">Удаление тестовых наборов</a></li>
+					<li class="active"><a href="#tab5" data-toggle="tab">Добавление текстов</a></li>
+					<li><a href="#tab6" data-toggle="tab">Удаление текстов</a></li>
+				{% end %}
+			</ul>
+			<div class="tab-content">
+				{% if is_admin %}
+				<div class="tab-pane active" id="tab1">
+					<div class="row-fluid">
+						<div class="span12">
+							<form class="form-horizontal" action="/add_teacher" method="post" >
+								<div class="control-group">
+									<label class="control-label" for="name">ФИО</label>
+									<div class="controls">
+										<input type="text" name="name" required>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="username">Логин</label>
+									<div class="controls">
+										<input type="text" name="username" required>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="password">Пароль</label>
+									<div class="controls">
+										<input type="password" name="password" required>
+									</div>
+								</div>
+								<div class="control-group">
+									<div class="controls">
+										<button type="submit" class="btn btn-primary">Добавить</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+					{% if 'error' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-error">
+								{% if error == 'duplicate' %}
+									Преподаватель с таким логином уже существует!
+								{% end %}
+								{% if error == 'missing_fields' %}
+									Заполнены не все поля!
+								{% end %}
+							</div>
+						</div>
+					</div>
+					{% end %}
+					{% if 'user_added' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-success">
+								Преподаватель добавлен!
+							</div>
+						</div>
+					</div>
+					{% end %}
+				</div>
+				<div class="tab-pane" id="tab2">
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<div class="alert">
+								<h4>Внимание!</h4>
+								При удалении преподавателя из базы данных будут удалены все его курсы и тестовые наборы с текстами.
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<table id="teachers" class="table table-striped">
+								<thead>
+									<th style="width: 80%;">Преподаватель</th>
+									<th style="width: 20%; text-align: center;">Действие</th>
+								</thead>
+								<tbody>
+									{% for teacher in teachers.items() %}
+									<tr>
+										<td>{{teacher[1]}}</td>
+										<td style="text-align: center;">
+											<button id="{{teacher[0]}}" class="btn btn-mini btn-danger" type="button"
+												onclick="confirm_remove(remove_teacher, [this.id, this.parentNode.parentNode.rowIndex])">&times
+											</button>
+										</td>
+									</tr>
+									{% end %}
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div id ="teachers_msg_block" class="row-fluid" style="display: none;">
+						<div class="span12">
+							<div class="alert alert-error">
+								Произошла какая-то ошибка!
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane" id="tab3">
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<div class="alert">
+								<h4>Внимание!</h4>
+								При нажатии на кнопку ниже будут удалены все тексты, отправляшиеся через расширенную форму проверки на плагиат ранее, чем 24 часа назад.
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid" style="margin-bottom: 20px;">
+						<div class="span10 offset1">
+							<button class="btn btn-danger" onclick="confirm_remove(clear_temp, [])">Удалить старые проверявшиеся тексты</button>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane" id="tab4">
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<div class="alert">
+								<h4>Внимание!</h4>
+								При нажатии на кнопку ниже будут удалены все результаты проверок на плагиат, сформированные ранее, чем 24 часа назад.
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid" style="margin-bottom: 20px;">
+						<div class="span10 offset1">
+							<button class="btn btn-danger" onclick="confirm_remove(clear_results, [])">Удалить старые результаты проверок</button>
+						</div>
+					</div>
+				</div>
+				{% else %}
+				<div class="tab-pane" id="tab1">
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="form-horizontal">
+								<div class="control-group">
+									<label class="control-label" for="name">Название</label>
+									<div class="controls">
+										<input id="add_course_name" type="text" name="name" required onkeypress="on_enter_key(add_course)">
+									</div>
+								</div>
+								<div class="control-group">
+									<div class="controls">
+										<button class="btn btn-primary" onclick="add_course()">Добавить</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid" style="display: none;">
+						<div class="span12">
+							<div id="adding_course_msg" class="alert alert-error">
+								Произошла какая-то ошибка!
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane" id="tab2">
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert">
+								<h4>Внимание!</h4>
+								При удалении курса из базы данных будут удалены все его тестовые наборы с текстами.
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<table class="table table-striped">
+								<thead>
+									<th style="width: 80%;">Курс</th>
+									<th style="width: 20%; text-align: center;">Действие</th>
+								</thead>
+								<tbody id="courses">
+									{% if courses is not None %}
+									{% for course in courses.items() %}
+									<tr>
+										<td>{{course[1]}}</td>
+										<td style="text-align: center;">
+											<button id="{{course[0]}}" class="btn btn-mini btn-danger" type="button"
+												onclick="confirm_remove(remove_course, [this.id])">&times
+											</button>
+										</td>
+									</tr>
+									{% end %}
+									{% end %}
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div id ="courses_msg_block" class="row-fluid" style="display: none;">
+						<div class="span12">
+							<div class="alert alert-error">
+								Произошла какая-то ошибка!
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane" id="tab3">
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="form-horizontal">
+								<div class="control-group">
+									<label class="control-label" for="course">Название курса</label>
+									<div class="controls">
+										<select id="adding_collection_course_id" name="course" required>
+											{% if courses is not None %}
+											{% for course in courses.items() %}
+												<option value={{course[0]}}>{{course[1]}}</option>
+											{% end %}
+											{% end %}
+										</select>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="name">Тестовый набор</label>
+									<div class="controls">
+										<input id="adding_collection_name" type="text" name="name" required onkeypress="on_enter_key(add_collection)">
+									</div>
+								</div>
+								<div class="control-group">
+									<div class="controls">
+										<button class="btn btn-primary" onclick="add_collection()">Добавить</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid" style="display: none;">
+						<div class="span12">
+							<div id="adding_collection_msg" class="alert alert-error">
+								Произошла какая-то ошибка!
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane" id="tab4">
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert">
+								<h4>Внимание!</h4>
+								При удалении тестового набора из базы данных будут удалены все тексты этого набора.
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="form-horizontal">
+								<div class="control-group">
+									<label class="control-label" for="course">Название курса</label>
+									<div class="controls">
+										<select id="removing_collection_course_id" name="course" onchange="removing_collection_change_course()">
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<table class="table table-striped">
+								<thead>
+									<th style="width: 80%;">Тестовый набор</th>
+									<th style="width: 20%; text-align: center;">Действие</th>
+								</thead>
+								<tbody id="collections">
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div id ="collections_msg_block" class="row-fluid" style="display: none;">
+						<div class="span12">
+							<div class="alert alert-error">
+								Произошла какая-то ошибка!
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane active" id="tab5">
+					<div class="row-fluid">
+						<div class="span12">
+							<form class="form-horizontal" action="/add_text" method="post" enctype="multipart/form-data">
+								<div class="control-group">
+									<label class="control-label" for="course_id">Название курса</label>
+									<div class="controls">
+										<select id="adding_text_course_id" name="course_id" onchange="adding_text_change_course()">
+										</select>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="collection_id">Тестовый набор</label>
+									<div class="controls">
+										<select id="adding_text_collection_id" name="collection_id">
+										</select>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="name">Название текста</label>
+									<div class="controls">
+										<input id="add_text_name" type="text" name="name" required>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="data">Файл</label>
+									<div class="controls">
+										<input type="file" name="data" style="width: 220px">
+									</div>
+								</div>
+								<div class="control-group">
+									<div class="controls">
+										<button type="submit" class="btn btn-primary">Добавить</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+					{% if 'error_missing_fields' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-error">
+								Заполнены не все поля!
+							</div>
+						</div>
+					</div>
+					{% end %}
+					{% if 'parse_error' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-error">
+								{{parse_error}}
+							</div>
+						</div>
+					</div>
+					{% end %}
+					{%if 'error_large_file' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-error">
+								Загружаемый файл превышает допустимый размер!
+							</div>
+						</div>
+					</div>
+					{% end %}
+					{%if 'unknown_collection' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-error">
+								Указанного тестового набора не существует!
+							</div>
+						</div>
+					</div>
+					{% end %}
+					{%if 'uploaded' in globals() %}
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="alert alert-success">
+								Файл добавлен!
+							</div>
+						</div>
+					</div>
+					{% end %}	
+				</div>
+				<div class="tab-pane" id="tab6">
+					<div class="row-fluid">
+						<div class="span12">
+							<div class="form-horizontal">
+								<div class="control-group">
+									<label class="control-label" for="course">Название курса</label>
+									<div class="controls">
+										<select id="removing_text_course_id" name="course" onchange="removing_text_change_course()">
+										</select>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="collection">Тестовый набор</label>
+									<div class="controls">
+										<select id="removing_text_collection_id" name="collection" onchange="removing_text_change_collection()">
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row-fluid">
+						<div class="span10 offset1">
+							<table class="table table-striped">
+								<thead>
+									<th style="width: 80%;">Название текста</th>
+									<th style="width: 20%; text-align: center;">Действие</th>
+								</thead>
+								<tbody id="texts">
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div id ="texts_msg_block" class="row-fluid" style="display: none;">
+						<div class="span12">
+							<div class="alert alert-error">
+								Произошла какая-то ошибка!
+							</div>
+						</div>
+					</div>
+				</div>
+				{% end %}
+			</div>
+		</div>
+	</div>
+	<script>
+		{% if not is_admin %}
+		{% if courses is not None %}
+		var courses = {{str([[item[0], item[1]] for item in courses.items()])}}
+		var collections = {};
+		update_courses();
+		{% else %}
+		var courses = [];
+		var collections = {};
+		var texts = {};
+		{% end %}
+		{% end %}
+		function clear_temp()
+		{
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("GET", "/clear_temp", false);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.send();
+		}
+		function clear_results()
+		{
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("GET", "/clear_results", false);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.send();
+		}
+		function confirm_remove(callback, args)
+		{
+			var c = confirm("Это действие необратимо. Продолжить?");
+			if (c)
+			{
+				callback.apply(this, args)
+			}
+		}
+		function on_enter_key(callback)
+		{
+			if (event.keyCode == 13)
+				callback();
+		}
+		function update_courses()
+		{
+			var adding_collection_course_id = document.getElementById("adding_collection_course_id");
+			var removing_collection_course_id = document.getElementById("removing_collection_course_id");
+			var adding_text_course_id = document.getElementById("adding_text_course_id");
+			var removing_text_course_id = document.getElementById("removing_text_course_id");
+			removing_collection_course_id.length = 0;
+			adding_collection_course_id.length = 0;
+			adding_text_course_id.length = 0;
+			removing_text_course_id.length = 0;
+			for (var i = 0; i < courses.length; i++)
+			{
+				adding_collection_course_id[i] = new Option(courses[i][1], courses[i][0]);
+				removing_collection_course_id[i] = new Option(courses[i][1], courses[i][0]);
+				adding_text_course_id[i] = new Option(courses[i][1], courses[i][0]);
+				removing_text_course_id[i] = new Option(courses[i][1], courses[i][0]);
+			}
+			removing_course_update_courses();
+			update_collections();
+		}
+		
+		function removing_course_update_courses()
+		{
+			var courses_tbody = document.getElementById("courses");
+			var rows_count = courses_tbody.rows.length;
+			for (var i = 0; i < rows_count; i++)
+			{
+				courses_tbody.deleteRow(0);
+			}
+			for (var i = 0; i < courses.length; i++)
+			{
+				var row = courses_tbody.insertRow(-1);
+				row.insertCell(0).innerHTML = courses[i][1];
+				row.insertCell(1).innerHTML = '<button id="' + courses[i][0] + '" class="btn btn-mini btn-danger" type="button" onclick="confirm_remove(remove_course, [this.id])">&times</button>';
+				row.cells[1].style.textAlign = "center";
+			}
+		}
+		
+		function removing_collection_change_course()
+		{
+			var removing_collection_course_id = document.getElementById("removing_collection_course_id");
+			var collections_tbody = document.getElementById("collections");
+			var rows_count = collections_tbody.rows.length;
+			for (var i = 0; i < rows_count; i++)
+			{
+				collections_tbody.deleteRow(0);
+			}
+			if (removing_collection_course_id.length > 0)
+			{
+				course_id = removing_collection_course_id[removing_collection_course_id.selectedIndex].value;
+				var course_collections = get_collections(course_id);
+				for (var i = 0; i < course_collections.length; i++)
+				{
+					var row = collections_tbody.insertRow(-1);
+					row.insertCell(0).innerHTML = course_collections[i][1];
+					row.insertCell(1).innerHTML = '<button id="' + course_collections[i][0] + '" class="btn btn-mini btn-danger" type="button" onclick="confirm_remove(remove_collection, [this.id])">&times</button>';
+					row.cells[1].style.textAlign = "center";
+				}
+			}
+		}
+		
+		function adding_text_change_course()
+		{
+			var course_id = document.getElementById("adding_text_course_id");
+			var adding_text_collection_id = document.getElementById("adding_text_collection_id");
+			adding_text_collection_id.length = 0;
+			if (course_id.length > 0)
+			{
+				course_id = course_id[course_id.selectedIndex].value;
+				course_collections = get_collections(course_id);
+				for (var i = 0; i < course_collections.length; i++)
+				{
+					adding_text_collection_id[i] = new Option(course_collections[i][1], course_collections[i][0]);
+				}
+			}
+		}
+		
+		function removing_text_change_course()
+		{
+			var course_id = document.getElementById("removing_text_course_id");
+			var removing_text_collection_id = document.getElementById("removing_text_collection_id");
+			removing_text_collection_id.length = 0;
+			if (course_id.length > 0)
+			{
+				course_id = course_id[course_id.selectedIndex].value;
+				course_collections = get_collections(course_id);
+				for (var i = 0; i < course_collections.length; i++)
+				{
+					removing_text_collection_id[i] = new Option(course_collections[i][1], course_collections[i][0]);
+				}
+			}
+			removing_text_change_collection();
+		}
+		
+		function removing_text_change_collection()
+		{
+			var removing_text_collection_id = document.getElementById("removing_text_collection_id");
+			var texts_tbody = document.getElementById("texts");
+			var rows_count = texts_tbody.rows.length;
+			for (var i = 0; i < rows_count; i++)
+			{
+				texts_tbody.deleteRow(0);
+			}
+			if (removing_text_collection_id.length > 0)
+			{
+				collection_id = removing_text_collection_id[removing_text_collection_id.selectedIndex].value;
+				var collection_texts = get_texts(collection_id);
+				for (var i = 0; i < collection_texts.length; i++)
+				{
+					var row = texts_tbody.insertRow(-1);
+					row.insertCell(0).innerHTML = collection_texts[i][1];
+					row.insertCell(1).innerHTML = '<button id="' + collection_texts[i][0] + '" class="btn btn-mini btn-danger" type="button" onclick="confirm_remove(remove_text, [this.id])">&times</button>';
+					row.cells[1].style.textAlign = "center";
+				}
+			}
+		}
+		
+		function add_course()
+		{
+			name = document.getElementById("add_course_name").value;
+			var adding_course_msg = document.getElementById("adding_course_msg");
+			adding_course_msg.parentNode.parentNode.style.display = "";
+			var params = 'name=' + encodeURIComponent(name);
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("POST", "/add_course", false);
+			xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+			xmlhttp.send(params);
+			if (xmlhttp.status == 200)
+			{
+				var result = xmlhttp.responseText;
+				if (result)
+				{
+					if (result == "0")
+					{
+						adding_course_msg.className = "alert alert-error";
+						adding_course_msg.innerHTML = "Такой курс уже есть!";
+					}
+					else if (result == "-1")
+					{
+						adding_course_msg.className = "alert alert-error";
+						adding_course_msg.innerHTML = "Произошла какая-то ошибка! Проверьте наличие названия курса.";
+					}
+					else
+					{
+						adding_course_msg.className = "alert alert-success";
+						adding_course_msg.innerHTML = 'Курс "' + name + '" добавлен!';
+						courses.push([result, name]);
+						update_courses();
+					}
+				}
+			}
+		}
+		
+		function remove_course(course_id)
+		{
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("GET", "/remove_course?id=" + course_id, false);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.send();
+			if (xmlhttp.status == 200)
+			{
+				var result = xmlhttp.responseText;
+				if (result)
+				{
+					if (result != "0")
+					{
+						for (var i = 0; i < courses.length; i++)
+						{
+							if (courses[i][0] == course_id)
+							{
+								courses.splice(i, 1);
+								break;
+							}
+						}
+						update_courses();
+					}
+					else
+					{
+						document.getElementById("courses_msg_block").style.display = "";
+					}
+				}
+			}
+		}
+		
+		function update_collections()
+		{
+			removing_collection_change_course();
+			adding_text_change_course();
+			removing_text_change_course();
+		}
+		
+		function add_collection()
+		{
+			var adding_collection_course_id = document.getElementById("adding_collection_course_id");
+			var adding_collection_msg = document.getElementById("adding_collection_msg");
+			adding_collection_msg.parentNode.parentNode.style.display = "";
+			if (adding_collection_course_id.length == 0)
+			{
+				adding_collection_msg.className = "alert alert-error";
+				adding_collection_msg.innerHTML = "Сначала надо добавить хотя бы один курс!";
+				return;
+			}
+			var course_id = adding_collection_course_id[adding_collection_course_id.selectedIndex].value;
+			var name = document.getElementById("adding_collection_name").value;
+			var params = 'name=' + encodeURIComponent(name) + '&course_id=' + encodeURIComponent(course_id);
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("POST", "/add_collection", false);
+			xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+			xmlhttp.send(params);
+			if (xmlhttp.status == 200)
+			{
+				var result = xmlhttp.responseText;
+				if (result)
+				{
+					if (result == "0")
+					{
+						adding_collection_msg.className = "alert alert-error";
+						adding_collection_msg.innerHTML = "Тестовый набор с таким названием в выбранном курсе уже есть!";
+					}
+					else if (result == "-1")
+					{
+						adding_collection_msg.className = "alert alert-error";
+						adding_collection_msg.innerHTML = "Произошла какая-то ошибка! Проверьте наличие названия тестового набора и выбранный курс.";
+					}
+					else
+					{
+						adding_collection_msg.className = "alert alert-success";
+						adding_collection_msg.innerHTML = 'Тестовый набор "' + name + '" добавлен!';
+						// зачем ?
+						if (course_id in collections)
+							collections[course_id].push([result, name]);
+						else
+							get_collections(course_id);
+						// end
+						update_collections();
+					}
+				}
+			}
+		}
+		
+		function remove_collection(collection_id)
+		{
+			var xmlhttp = getXmlHttp();
+			var removing_collection_course_id = document.getElementById("removing_collection_course_id");
+			var course_id = removing_collection_course_id[removing_collection_course_id.selectedIndex].value;
+			xmlhttp.open("GET", "/remove_collection?id=" + collection_id, false);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.send();
+			if (xmlhttp.status == 200)
+			{
+				var result = xmlhttp.responseText;
+				if (result)
+				{
+					if (result != "0")
+					{
+						get_collections(course_id);
+						for (var i = 0; i < collections[course_id].length; i++)
+						{
+							if (collections[course_id][i][0] == collection_id)
+							{
+								collections[course_id].splice(i, 1);
+								break;
+							}
+						}
+						update_collections();
+					}
+					else
+					{
+						document.getElementById("courses_msg_block").style.display = "";
+					}
+				}
+			}
+		}
+		
+		function remove_teacher(teacher_id, rowIndex)
+		{
+			var xmlhttp = getXmlHttp();
+			xmlhttp.open("GET", "/remove_teacher?id=" + teacher_id, false);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.send();
+			if (xmlhttp.status == 200)
+			{
+				var result = xmlhttp.responseText;
+				if (result)
+				{
+					if (result != "0")
+					{
+						document.getElementById("teachers").deleteRow(rowIndex);
+					}
+					else
+					{
+						document.getElementById("teachers_msg_block").style.display = "";
+					}
+				}
+			}
+		}
+		function get_collections(course_id)
+		{
+			if (!(course_id in collections))
+			{
+				collections[course_id] = [];
+				var xmlhttp = getXmlHttp();
+				xmlhttp.open("GET", "/collections?course_id=" + course_id, false);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+				xmlhttp.send();
+				if (xmlhttp.status == 200)
+				{
+					var result = xmlhttp.responseText;
+					if (result)
+					{
+						var new_collections = result.split(';');
+						for (var i = 0; i < new_collections.length; i++)
+						{
+							var new_collection = new_collections[i].split(',');
+							collections[course_id].push([new_collection[0], new_collection[1]]);
+						}
+					}
+				}
+			}
+			return collections[course_id];
+		}
+		function get_texts(collection_id)
+		{
+			if (!(collection_id in texts))
+			{
+				texts[collection_id] = [];
+				var xmlhttp = getXmlHttp();
+				xmlhttp.open("GET", "/texts?collection_id=" + collection_id, false);
+				xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+				xmlhttp.send();
+				if (xmlhttp.status == 200)
+				{
+					var result = xmlhttp.responseText;
+					if (result)
+					{
+						var new_texts = result.split(';');
+						for (var i = 0; i < new_texts.length; i++)
+						{
+							var new_text = new_texts[i].split(',');
+							texts[collection_id].push([new_text[0], new_text[1]]);
+						}
+					}
+				}
+			}
+			return texts[collection_id];
+		}
+		function remove_text(text_id, rowIndex)
+		{
+			var xmlhttp = getXmlHttp();
+			var removing_text_collection_id = document.getElementById("removing_text_collection_id");
+			var collection_id = removing_text_collection_id[removing_text_collection_id.selectedIndex].value;
+			xmlhttp.open("GET", "/remove_text?id=" + text_id, false);
+			xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+			xmlhttp.send();
+			if (xmlhttp.status == 200)
+			{
+				var result = xmlhttp.responseText;
+				if (result)
+				{
+					if (result != "0")
+					{
+						get_texts(collection_id);
+						for (var i = 0; i < texts[collection_id].length; i++)
+						{
+							if (texts[collection_id][i][0] == text_id)
+							{
+								texts[collection_id].splice(i, 1);
+								removing_text_change_collection();
+								break;
+							}
+						}
+					}
+					else
+					{
+						document.getElementById("texts_msg_block").style.display = "";
+					}
+				}
+			}
+		}
+	</script>
+{% end %}

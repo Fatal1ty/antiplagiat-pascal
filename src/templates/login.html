@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{%block title %}Вход в систему{% end %}
+
+{% block content %}
+	<div class="row-fluid">
+		<div class="span12">
+			<form class="form-horizontal" action="/login" method="post">
+				<input type="hidden" name="next" value="{{ next }}">
+				<div class="control-group">
+					<label class="control-label" for="username">Логин</label>
+					<div class="controls">
+						<input type="text" name="username" required>
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label" for="password">Пароль</label>
+					<div class="controls">
+						<input type="password" name="password" required>
+					</div>
+				</div>
+				<div class="control-group">
+					<div class="controls">
+						<button type="submit" class="btn btn-primary">Войти</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	{% if 'error_missing_fields' in globals() %}
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="alert alert-error">
+				Заполнены не все поля!
+			</div>
+		</div>
+	</div>
+	{% end %}
+	{% if 'error_wrong_user' in globals() %}
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="alert alert-error">
+				Неверный логин или пароль!
+			</div>
+		</div>
+	</div>
+	{% end %}
+{% end %}

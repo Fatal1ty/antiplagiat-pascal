@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+	<meta charset="utf-8">
+	<title>{% block title %}Антиплагиат-Паскаль{% end %}</title>
+	<link href="{{ static_url("css/bootstrap.css") }}" rel="stylesheet">
+	<link href="{{ static_url("css/bootstrap-responsive.css") }}" rel="stylesheet">
+	<link href="{{ static_url("css/delphi.css") }}" rel="stylesheet">
+	<script type="text/javascript" src="{{ static_url("js/jquery.js") }}"></script>
+	<script type="text/javascript" src="{{ static_url("js/bootstrap-dropdown.js") }}"></script>
+	<script type="text/javascript" src="{{ static_url("js/bootstrap-tab.js") }}"></script>
+	<script type="text/javascript" src="{{ static_url("js/bootstrap-alert.js") }}"></script>
+	<script type="text/javascript" src="{{ static_url("js/bootstrap-tooltip.js") }}"></script>
+	<script type="text/javascript" src="{{ static_url("js/bootstrap-popover.js") }}"></script>
+	<script type="text/javascript" src="{{ static_url("js/xmlhttp.js") }}"></script>
+	</head>
+
+	<body>
+	<div class="navbar navbar-static-top navbar-inverse">
+		<div class="navbar-inner">
+			<a class="brand" href="/">Антиплагиат-Паскаль</a>
+			<ul class="nav">
+				<li class="divider-vertical"></li>
+				<li{% block active_check %}{% end %}><a href="/check">Проверка на плагиат</a></li>
+				<li class="divider-vertical"></li>
+				{% if current_user %}
+				<li{% block active_advanced_check %}{% end %}><a href="/advanced_check">Расширенная проверка на плагиат</a></li>
+				<li class="divider-vertical"></li>
+				<li{% block active_admin %}{% end %}><a href="/admin">Администрирование</a></li>
+				<li class="divider-vertical"></li>
+				{% end %}
+			</ul>
+			{% if current_user %}
+			<form class="navbar-form pull-right" action="/exit" method="post">
+				<button type="submit" class="btn">Выход</button>
+			</form>
+			{% else %}
+			<form class="navbar-form pull-right" action="/login" method="post">
+				<input type="hidden" name="next" value="{{ handler.get_argument('next', '/') }}">
+				<input type="text" value="Логин" name="username" class="span2"
+				style="background-color: #696969; color: #9f9f9f; border-color: #000000;" onfocus="this.value='';">
+				<input type="password" value="Password" name="password" class="span2" style="background-color: #696969; color: #9f9f9f; border-color: #000000;" onfocus="this.value='';">
+				<button type="submit" class="btn">Войти</button>
+			</form>
+			{% end %}
+		</div>
+	</div>
+	<div class="row-fluid">
+		<div class="span10 offset1">
+			<div class="container-fluid" style="border-bottom-left-radius: 10px;
+													 border-bottom-right-radius: 10px;
+													 border-left-style: none;
+													 border-right-style: solid;
+													 border-bottom-style: solid;
+													 border-color: #d2d2d2;
+													 border-right-width: 1px;
+													 border-bottom-width: 2px;">
+				<!--в этот контейнер надо добавить fill для занятия всей высоты-->
+				<div class="row-fluid">
+					<div class="span12">
+						<div class="page-header">
+							<h3>{% block title %}Антиплагиат-Паскаль{% end %}</h3>
+						</div>
+					</div>
+				</div>
+				{% block content %}{% end %}
+			</div>
+		</div>
+	</div>
+	<!--<div class="row-fluid">
+		<div class="span10 offset1">
+			<hr>
+		</div>
+	</div>-->

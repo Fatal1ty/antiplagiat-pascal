@@ -1,0 +1,62 @@
+.delphi .hll { background-color: #ffffcc }
+.delphi  { background: #f8f8f8; }
+.delphi .c { color: #408080; font-style: italic } /* Comment */
+.delphi .err { border: 1px solid #FF0000 } /* Error */
+.delphi .k { color: #008000; font-weight: bold } /* Keyword */
+.delphi .o { color: #666666 } /* Operator */
+.delphi .cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.delphi .cp { color: #BC7A00 } /* Comment.Preproc */
+.delphi .c1 { color: #408080; font-style: italic } /* Comment.Single */
+.delphi .cs { color: #408080; font-style: italic } /* Comment.Special */
+.delphi .gd { color: #A00000 } /* Generic.Deleted */
+.delphi .ge { font-style: italic } /* Generic.Emph */
+.delphi .gr { color: #FF0000 } /* Generic.Error */
+.delphi .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.delphi .gi { color: #00A000 } /* Generic.Inserted */
+.delphi .go { color: #888888 } /* Generic.Output */
+.delphi .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.delphi .gs { font-weight: bold } /* Generic.Strong */
+.delphi .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.delphi .gt { color: #0044DD } /* Generic.Traceback */
+.delphi .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.delphi .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.delphi .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.delphi .kp { color: #008000 } /* Keyword.Pseudo */
+.delphi .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.delphi .kt { color: #B00040 } /* Keyword.Type */
+.delphi .m { color: #666666 } /* Literal.Number */
+.delphi .s { color: #BA2121 } /* Literal.String */
+.delphi .na { color: #7D9029 } /* Name.Attribute */
+.delphi .nb { color: #008000 } /* Name.Builtin */
+.delphi .nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.delphi .no { color: #880000 } /* Name.Constant */
+.delphi .nd { color: #AA22FF } /* Name.Decorator */
+.delphi .ni { color: #999999; font-weight: bold } /* Name.Entity */
+.delphi .ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.delphi .nf { color: #0000FF } /* Name.Function */
+.delphi .nl { color: #A0A000 } /* Name.Label */
+.delphi .nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.delphi .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.delphi .nv { color: #19177C } /* Name.Variable */
+.delphi .ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.delphi .w { color: #bbbbbb } /* Text.Whitespace */
+.delphi .mf { color: #666666 } /* Literal.Number.Float */
+.delphi .mh { color: #666666 } /* Literal.Number.Hex */
+.delphi .mi { color: #666666 } /* Literal.Number.Integer */
+.delphi .mo { color: #666666 } /* Literal.Number.Oct */
+.delphi .sb { color: #BA2121 } /* Literal.String.Backtick */
+.delphi .sc { color: #BA2121 } /* Literal.String.Char */
+.delphi .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.delphi .s2 { color: #BA2121 } /* Literal.String.Double */
+.delphi .se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.delphi .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.delphi .si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.delphi .sx { color: #008000 } /* Literal.String.Other */
+.delphi .sr { color: #BB6688 } /* Literal.String.Regex */
+.delphi .s1 { color: #BA2121 } /* Literal.String.Single */
+.delphi .ss { color: #19177C } /* Literal.String.Symbol */
+.delphi .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.delphi .vc { color: #19177C } /* Name.Variable.Class */
+.delphi .vg { color: #19177C } /* Name.Variable.Global */
+.delphi .vi { color: #19177C } /* Name.Variable.Instance */
+.delphi .il { color: #666666 } /* Literal.Number.Integer.Long */
